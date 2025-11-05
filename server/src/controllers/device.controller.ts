@@ -23,11 +23,28 @@ async function canManageLocation(req: Request, location?: string): Promise<boole
 }
 
 export async function list(req: Request, res: Response) {
-  const data = await svc.listDevices(req.query);
+  // Scope by allowed locations for MANAGER role
+  let query: any = { ...req.query };
+  const role = req.user?.role;
+  if (role === 'MANAGER') {
+    await connectMongo();
+    const user: any = await UserModel.findById(req.user!.id, { locations: 1 }).lean();
+    const locs = Array.isArray(user?.locations) ? user.locations.filter((s: any) => typeof s === 'string') : [];
+    query.allowedLocations = locs;
+  }
+  const data = await svc.listDevices(query);
   res.json(data);
 }
 
 export async function getOne(req: Request, res: Response) {
+  const role = req.user?.role;
+  if (role === 'MANAGER') {
+    await connectMongo();
+    const device: any = await DeviceModel.findById(req.params.id, { location: 1 }).lean();
+    if (!device) return res.status(404).json({ message: 'Device not found' });
+    const allowed = await canManageLocation(req, device.location);
+    if (!allowed) return res.status(403).json({ message: 'Forbidden: location not permitted' });
+  }
   const data = await svc.getDevice(req.params.id);
   res.json(data);
 }
