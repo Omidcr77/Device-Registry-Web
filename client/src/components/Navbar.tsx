@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Moon, Sun, LogOut, User as UserIcon, Settings, Shield, Menu, X, Bell } from 'lucide-react';
+import { Moon, Sun, LogOut, LogIn, User as UserIcon, Settings, Shield, Menu, X, Bell, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useTheme } from '../lib/theme-context';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import {
@@ -111,6 +111,39 @@ export const Navbar: React.FC<NavbarProps> = ({
   const displayName = currentUser?.name || (currentUser as any)?.username || 'User';
   const isAdmin = (currentUser?.role || '').toLowerCase() === 'admin';
   const status = (currentUser?.status || 'active').toLowerCase();
+  const relTime = (ts?: number) => {
+    if (!ts || Number.isNaN(ts)) return '';
+    const s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+    if (s < 60) return s + 's ago';
+    const m = Math.floor(s / 60);
+    if (m < 60) return m + 'm ago';
+    const h = Math.floor(m / 60);
+    if (h < 24) return h + 'h ago';
+    const d = Math.floor(h / 24);
+    return d + 'd ago';
+  };
+  const classifyAlert = (a: any) => {
+    const t: string = String(a?.title || '');
+    if (t.startsWith('Offline:')) return { sev: 'critical' as const, Icon: AlertTriangle, badge: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' };
+    if (t.startsWith('Back online:')) return { sev: 'good' as const, Icon: CheckCircle2, badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' };
+    if (t.startsWith('User ')) {
+      const msg = t.toLowerCase();
+      const badge = msg.includes('logged in') ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+      return { sev: 'info' as const, Icon: msg.includes('logged in') ? LogIn : LogOut, badge };
+    }
+    return { sev: 'info' as const, Icon: Bell, badge: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' };
+  };
+
+  const sortedAlerts = React.useMemo(() => {
+    const list = (alerts || []).map((a: any, idx: number) => {
+      const meta = classifyAlert(a);
+      const weight = meta.sev === 'critical' ? 0 : meta.sev === 'good' ? 1 : 2;
+      const ts = typeof (a as any).ts === 'number' ? Number((a as any).ts) : undefined;
+      return { a, meta, weight, ts, idx };
+    });
+    list.sort((x, y) => x.weight - y.weight || (y.ts || 0) - (x.ts || 0) || x.idx - y.idx);
+    return list;
+  }, [alerts]);
 
   return (
     <>
@@ -175,13 +208,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <div className="px-3 py-6 text-sm text-gray-500 dark:text-gray-400">No alerts</div>
                 ) : (
                   <div className="py-1">
-                    {(showAllAlerts ? alerts : alerts.slice(0, 5)).map((a, i) => (
+                    {(showAllAlerts ? sortedAlerts : sortedAlerts.slice(0, 5)).map(({ a, meta }, i) => (
                       <div key={i} className="px-3 py-2">
                         <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="text-sm text-gray-900 dark:text-white">{a.title}</div>
-                            {a.body && <div className="text-xs text-gray-500 dark:text-gray-400">{a.body}</div>}
-                            <div className="text-[10px] text-gray-400">{a.at}</div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] ${meta.badge}`}>
+                                <meta.Icon className="w-3.5 h-3.5" />
+                                {meta.sev === 'critical' ? 'Outage' : meta.sev === 'good' ? 'Recovered' : 'Activity'}
+                              </span>
+                              <div className="text-[10px] text-gray-400">{relTime((a as any).ts) || a.at}</div>
+                            </div>
+                            <div className="text-sm text-gray-900 dark:text-white truncate">{a.title}</div>
+                            {a.body && <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{a.body}</div>}
                           </div>
                           {a.id && (
                             (mutedDeviceIds.includes(a.id)) ? (
@@ -334,3 +373,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     </>
   );
 };
+
+
+
+

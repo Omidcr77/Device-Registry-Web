@@ -230,7 +230,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                   const title = `Back online: ${d?.name || id}`;
                   const body = d?.ip;
                   setAlerts((prev) => [
-                    { title, body, at: new Date().toLocaleString(), id } as any,
+                    { title, body, at: new Date().toLocaleString(), id, ts: Date.now() } as any,
                     ...prev,
                   ].slice(0, 50));
                 }
@@ -433,6 +433,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     </div>
   );
 };
+
 
 
 

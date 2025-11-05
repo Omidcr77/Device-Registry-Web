@@ -102,6 +102,15 @@ export const DeviceList: React.FC<DeviceListProps> = ({
   });
   const markEditHintSeen = () => { try { localStorage.setItem('editHintSeen', '1'); } catch {}; setEditHintSeen(true); };
 
+  // Add/Edit validation state
+  const [addErrors, setAddErrors] = useState<Record<string, string | null>>({});
+  const [editErrors, setEditErrors] = useState<Record<string, string | null>>({});
+  const [savingAdd, setSavingAdd] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const validateIp = (ip: string) => /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/.test(ip);
+  const setFieldError = (setFn: any, key: string, msg: string | null) => setFn((prev: any) => ({ ...prev, [key]: msg }));
+
   // Add form
   const [newDeviceCode, setNewDeviceCode] = useState('');
   const [newDeviceType, setNewDeviceType] = useState('');
@@ -336,11 +345,19 @@ export const DeviceList: React.FC<DeviceListProps> = ({
   const handleAddDevice = () => setIsAddDialogOpen(true);
 
   const handleSubmitAddDevice = async () => {
-    if (!newDeviceCode || !newDeviceType || !newDeviceName || !newCustomer || !newLocation || !newIp) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
+    if (savingAdd) return;
+    let ok = true;
+    setAddErrors({});
+    if (!newDeviceCode.trim()) { setFieldError(setAddErrors, 'code', 'Device code is required'); ok = false; }
+    if (!newDeviceType.trim()) { setFieldError(setAddErrors, 'type', 'Device type is required'); ok = false; }
+    if (!newDeviceName.trim()) { setFieldError(setAddErrors, 'name', 'Device name is required'); ok = false; }
+    if (!newCustomer.trim()) { setFieldError(setAddErrors, 'customer', 'Customer is required'); ok = false; }
+    if (!newLocation.trim()) { setFieldError(setAddErrors, 'location', 'Location is required'); ok = false; }
+    if (!newIp.trim()) { setFieldError(setAddErrors, 'ip', 'IP address is required'); ok = false; }
+    else if (!validateIp(newIp.trim())) { setFieldError(setAddErrors, 'ip', 'Enter a valid IPv4 address'); ok = false; }
+    if (!ok) return;
     try {
+      setSavingAdd(true);
       const newDevice = {
         code: newDeviceCode,
         type: newDeviceType,
@@ -351,7 +368,6 @@ export const DeviceList: React.FC<DeviceListProps> = ({
         ip: newIp,
       };
       await api.createDevice(newDevice);
-      toast.success('Device added');
       setIsAddDialogOpen(false);
       setNewDeviceCode('');
       setNewDeviceType('');
@@ -361,17 +377,26 @@ export const DeviceList: React.FC<DeviceListProps> = ({
       setNewIp('');
       onDevicesChange?.();
     } catch (e) {
-      toast.error('Failed to add device');
+      setFieldError(setAddErrors, 'form', 'Failed to add device');
+    } finally {
+      setSavingAdd(false);
     }
   };
 
   const handleSubmitEditDevice = async () => {
-    if (!editingDevice) return;
-    if (!editDeviceCode || !editDeviceType || !editDeviceName || !editCustomer || !editLocation || !editIp) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
+    if (!editingDevice || savingEdit) return;
+    let ok = true;
+    setEditErrors({});
+    if (!editDeviceCode.trim()) { setFieldError(setEditErrors, 'code', 'Device code is required'); ok = false; }
+    if (!editDeviceType.trim()) { setFieldError(setEditErrors, 'type', 'Device type is required'); ok = false; }
+    if (!editDeviceName.trim()) { setFieldError(setEditErrors, 'name', 'Device name is required'); ok = false; }
+    if (!editCustomer.trim()) { setFieldError(setEditErrors, 'customer', 'Customer is required'); ok = false; }
+    if (!editLocation.trim()) { setFieldError(setEditErrors, 'location', 'Location is required'); ok = false; }
+    if (!editIp.trim()) { setFieldError(setEditErrors, 'ip', 'IP address is required'); ok = false; }
+    else if (!validateIp(editIp.trim())) { setFieldError(setEditErrors, 'ip', 'Enter a valid IPv4 address'); ok = false; }
+    if (!ok) return;
     try {
+      setSavingEdit(true);
       await api.updateDevice(editingDevice.id, {
         code: editDeviceCode,
         type: editDeviceType,
@@ -380,12 +405,13 @@ export const DeviceList: React.FC<DeviceListProps> = ({
         location: editLocation,
         ip: editIp,
       });
-      toast.success('Device updated');
       setIsEditDialogOpen(false);
       setEditingDevice(null);
       onDevicesChange?.();
     } catch (e) {
-      toast.error('Failed to update device');
+      setFieldError(setEditErrors, 'form', 'Failed to update device');
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -823,45 +849,63 @@ export const DeviceList: React.FC<DeviceListProps> = ({
             <DialogTitle>Add New Device</DialogTitle>
             <DialogDescription>Enter details to add this device to the registry. Press Esc to close.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="device-code">Device Code *</Label>
-              <Input id="device-code" value={newDeviceCode} onChange={(e) => setNewDeviceCode(e.target.value)} placeholder="e.g., D001" />
+          <div className="grid gap-6 py-4">
+            <div>
+              <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Identity</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="device-code">Device Code *</Label>
+                  <Input id="device-code" value={newDeviceCode} onChange={(e) => setNewDeviceCode(e.target.value)} placeholder="e.g., D001" />
+                  {addErrors.code && <p className="text-xs text-red-600">{addErrors.code}</p>}
+                  <p className="text-[11px] text-gray-500">Use a unique code like D001, D002…</p>
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Device Type *</Label>
+                  <Select value={newDeviceType} onValueChange={setNewDeviceType}>
+                    <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Router">Router</SelectItem>
+                      <SelectItem value="Switch">Switch</SelectItem>
+                      <SelectItem value="SXT">SXT</SelectItem>
+                      <SelectItem value="LHG">LHG</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {addErrors.type && <p className="text-xs text-red-600">{addErrors.type}</p>}
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="device-name">Device Name *</Label>
+                  <Input id="device-name" value={newDeviceName} onChange={(e) => setNewDeviceName(e.target.value)} placeholder="e.g., RT-Main-01" />
+                  {addErrors.name && <p className="text-xs text-red-600">{addErrors.name}</p>}
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="customer">Customer *</Label>
+                  <Input id="customer" value={newCustomer} onChange={(e) => setNewCustomer(e.target.value)} placeholder="Customer name" />
+                  {addErrors.customer && <p className="text-xs text-red-600">{addErrors.customer}</p>}
+                </div>
+                <div className="grid gap-1.5 md:col-span-2">
+                  <Label htmlFor="location">Location *</Label>
+                  <Input id="location" value={newLocation} onChange={(e) => setNewLocation(e.target.value)} placeholder="Building, Floor, Rack" />
+                  {addErrors.location && <p className="text-xs text-red-600">{addErrors.location}</p>}
+                </div>
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label>Device Type *</Label>
-              <Select value={newDeviceType} onValueChange={setNewDeviceType}>
-                <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Router">Router</SelectItem>
-                  <SelectItem value="Switch">Switch</SelectItem>
-                  <SelectItem value="SXT">SXT</SelectItem>
-                  <SelectItem value="LHG">LHG</SelectItem>
-                  {/* Cable removed */}
-                </SelectContent>
-              </Select>
+            <div>
+              <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Networking</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="ip">IP Address *</Label>
+                  <Input id="ip" value={newIp} onChange={(e) => setNewIp(e.target.value)} placeholder="e.g., 192.168.1.10" />
+                  {addErrors.ip && <p className="text-xs text-red-600">{addErrors.ip}</p>}
+                  <p className="text-[11px] text-gray-500">IPv4 only (A.B.C.D)</p>
+                </div>
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="device-name">Device Name *</Label>
-              <Input id="device-name" value={newDeviceName} onChange={(e) => setNewDeviceName(e.target.value)} placeholder="e.g., RT-Main-01" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="customer">Customer *</Label>
-              <Input id="customer" value={newCustomer} onChange={(e) => setNewCustomer(e.target.value)} placeholder="Customer name" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="location">Location *</Label>
-              <Input id="location" value={newLocation} onChange={(e) => setNewLocation(e.target.value)} placeholder="Building, Floor, Rack" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="ip">IP Address *</Label>
-              <Input id="ip" value={newIp} onChange={(e) => setNewIp(e.target.value)} placeholder="192.168.1.x" />
-            </div>
+            {addErrors.form && <p className="text-sm text-red-600">{addErrors.form}</p>}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSubmitAddDevice} className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700">
-              Add Device
+            <Button onClick={handleSubmitAddDevice} disabled={savingAdd} className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed">
+              {savingAdd ? 'Adding…' : 'Add Device'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -874,46 +918,62 @@ export const DeviceList: React.FC<DeviceListProps> = ({
             <DialogTitle>Edit Device</DialogTitle>
             <DialogDescription>Update device details. Press Esc to close.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="edit-device-code">Device Code *</Label>
-              <Input id="edit-device-code" value={editDeviceCode} onChange={(e) => setEditDeviceCode(e.target.value)} placeholder="e.g., D001" />
+          <div className="grid gap-6 py-4">
+            <div>
+              <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Identity</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="edit-device-code">Device Code *</Label>
+                  <Input id="edit-device-code" value={editDeviceCode} onChange={(e) => setEditDeviceCode(e.target.value)} placeholder="e.g., D001" />
+                  {editErrors.code && <p className="text-xs text-red-600">{editErrors.code}</p>}
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Device Type *</Label>
+                  <Select value={editDeviceType} onValueChange={setEditDeviceType}>
+                    <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Router">Router</SelectItem>
+                      <SelectItem value="Switch">Switch</SelectItem>
+                      <SelectItem value="SXT">SXT</SelectItem>
+                      <SelectItem value="LHG">LHG</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {editErrors.type && <p className="text-xs text-red-600">{editErrors.type}</p>}
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="edit-device-name">Device Name *</Label>
+                  <Input id="edit-device-name" value={editDeviceName} onChange={(e) => setEditDeviceName(e.target.value)} placeholder="e.g., RT-Main-01" />
+                  {editErrors.name && <p className="text-xs text-red-600">{editErrors.name}</p>}
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="edit-customer">Customer *</Label>
+                  <Input id="edit-customer" value={editCustomer} onChange={(e) => setEditCustomer(e.target.value)} placeholder="Customer name" />
+                  {editErrors.customer && <p className="text-xs text-red-600">{editErrors.customer}</p>}
+                </div>
+                <div className="grid gap-1.5 md:col-span-2">
+                  <Label htmlFor="edit-location">Location *</Label>
+                  <Input id="edit-location" value={editLocation} onChange={(e) => setEditLocation(e.target.value)} placeholder="Building, Floor, Rack" />
+                  {editErrors.location && <p className="text-xs text-red-600">{editErrors.location}</p>}
+                </div>
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label>Device Type *</Label>
-              <Select value={editDeviceType} onValueChange={setEditDeviceType}>
-                <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Router">Router</SelectItem>
-                  <SelectItem value="Switch">Switch</SelectItem>
-                  <SelectItem value="SXT">SXT</SelectItem>
-                  <SelectItem value="LHG">LHG</SelectItem>
-                  {/* Cable removed */}
-                </SelectContent>
-              </Select>
+            <div>
+              <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Networking</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="edit-ip">IP Address *</Label>
+                  <Input id="edit-ip" value={editIp} onChange={(e) => setEditIp(e.target.value)} placeholder="e.g., 192.168.1.10" />
+                  {editErrors.ip && <p className="text-xs text-red-600">{editErrors.ip}</p>}
+                  <p className="text-[11px] text-gray-500">IPv4 only (A.B.C.D)</p>
+                </div>
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-device-name">Device Name *</Label>
-              <Input id="edit-device-name" value={editDeviceName} onChange={(e) => setEditDeviceName(e.target.value)} placeholder="e.g., RT-Main-01" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-customer">Customer *</Label>
-              <Input id="edit-customer" value={editCustomer} onChange={(e) => setEditCustomer(e.target.value)} placeholder="Customer name" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-location">Location *</Label>
-              <Input id="edit-location" value={editLocation} onChange={(e) => setEditLocation(e.target.value)} placeholder="Building, Floor, Rack" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-ip">IP Address *</Label>
-              <Input id="edit-ip" value={editIp} onChange={(e) => setEditIp(e.target.value)} placeholder="192.168.1.x" />
-            </div>
-            {/* status field removed */}
+            {editErrors.form && <p className="text-sm text-red-600">{editErrors.form}</p>}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSubmitEditDevice} className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700">
-              Update Device
+            <Button onClick={handleSubmitEditDevice} disabled={savingEdit} className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed">
+              {savingEdit ? 'Saving…' : 'Update Device'}
             </Button>
           </DialogFooter>
         </DialogContent>
