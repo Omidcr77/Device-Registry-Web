@@ -9,6 +9,7 @@ import { connectMongo, DeviceModel } from './db/mongo.js';
 import searchRoutes from './routes/search.routes.js';
 import healthRoutes from './routes/health.routes.js';
 import { errorHandler } from './middleware/error.js';
+import type { Request, Response } from 'express';
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -20,6 +21,13 @@ import reportRoutes from './routes/report.routes.js';
 
 app.use('/api/reports', reportRoutes);
 app.use('/api/health', healthRoutes);
+
+// Structured JSON 404 for unknown endpoints
+app.use((req: Request, res: Response) => {
+  const path = req.originalUrl || req.url || '';
+  try { console.warn('404 Not Found:', req.method, path); } catch {}
+  res.status(404).json({ message: 'Not Found', path, method: req.method });
+});
 
 // Error handler should be last in the middleware chain (before starting server)
 app.use(errorHandler);
