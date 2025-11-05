@@ -48,6 +48,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const wsConnectedAtRef = React.useRef<number>(0);
   const userLastSeenRef = React.useRef<Record<string, number>>({});
   const [usersOnlineCount, setUsersOnlineCount] = useState<number | null>(null);
+  const prevCountsRef = React.useRef<{ total?: number; online?: number; offline?: number; users?: number }>({});
+  const [lastUpdatedTs, setLastUpdatedTs] = useState<number | null>(null);
 
   // React to settings saved in the Settings component
   useEffect(() => {
@@ -273,8 +275,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         const ids = devices.map((d: any) => String(d.id)).filter(Boolean);
         const summary = await api.getStatusSummary(ids);
         if (cancelled) return;
-        setOnlineCount(Number(summary?.online ?? 0));
-        setOfflineCount(Number(summary?.offline ?? 0));
+        const on = Number(summary?.online ?? 0);
+        const off = Number(summary?.offline ?? 0);
+        setOnlineCount(on);
+        setOfflineCount(off);
+        setLastUpdatedTs(Date.now());
+        prevCountsRef.current.total = devices.length;
+        prevCountsRef.current.online = on;
+        prevCountsRef.current.offline = off;
       } catch {
         if (!cancelled) { setOnlineCount(null as any); setOfflineCount(null as any); }
       } finally {
@@ -343,6 +351,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               usersOnlineCount={((currentUser?.role || '').toUpperCase() === 'ADMIN') ? (usersOnlineCount ?? undefined) : undefined}
               isAdmin={(currentUser?.role || '').toUpperCase() === 'ADMIN'}
               loading={loading || onlineLoading}
+              deltas={{
+                totalDelta: typeof prevCountsRef.current.total === 'number' ? (devices.length - (prevCountsRef.current.total || 0)) : undefined,
+                onlineDelta: typeof prevCountsRef.current.online === 'number' ? ((onlineCount ?? 0) - (prevCountsRef.current.online || 0)) : undefined,
+                offlineDelta: typeof prevCountsRef.current.offline === 'number' ? ((offlineCount ?? 0) - (prevCountsRef.current.offline || 0)) : undefined,
+                usersDelta: undefined,
+              }}
+              lastUpdatedTs={lastUpdatedTs}
             />
             <div className="mt-6 mb-3">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Devices</h3>

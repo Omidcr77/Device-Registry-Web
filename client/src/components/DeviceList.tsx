@@ -61,6 +61,8 @@ export const DeviceList: React.FC<DeviceListProps> = ({
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'online' | 'offline'>('all');
+  const [showFilters, setShowFilters] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('deviceList.columns') || '[]'); } catch { return []; }
   });
@@ -454,49 +456,72 @@ export const DeviceList: React.FC<DeviceListProps> = ({
           )}
         </div>
 
-        <div className="flex flex-wrap gap-3 items-center justify-between">
-          <div className="flex flex-wrap gap-3">
-            <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-3">
+          {/* Compact filter chips row */}
+          <div className="flex flex-wrap items-center gap-2 justify-between">
+            <div className="flex flex-wrap items-center gap-2">
               <Filter className="w-4 h-4 text-gray-500" />
-              <Select value={typeFilter} onValueChange={(v: React.SetStateAction<string>) => { setTypeFilter(v); setCurrentPage(1); }}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Device Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="Router">Router</SelectItem>
-                  <SelectItem value="Switch">Switch</SelectItem>
-                  <SelectItem value="SXT">SXT</SelectItem>
-                  <SelectItem value="LHG">LHG</SelectItem>
-                  {/* Cable removed */}
-                </SelectContent>
-              </Select>
+              {typeFilter !== 'all' && (
+                <span className="text-xs rounded-full px-2 py-1 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">Type: {typeFilter}</span>
+              )}
+              {statusFilter !== 'all' && (
+                <span className="text-xs rounded-full px-2 py-1 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">Status: {statusFilter}</span>
+              )}
+              {searchQuery.trim() && (
+                <span className="text-xs rounded-full px-2 py-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">Search: “{searchQuery.trim()}”</span>
+              )}
+              <span className="text-xs rounded-full px-2 py-1 bg-gray-50 dark:bg-slate-900/50 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-800">Rows: {pageSize}</span>
+              <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setShowFilters((v) => !v)}>
+                {showFilters ? 'Hide filters' : 'Edit filters'}
+              </Button>
+              {(typeFilter !== 'all' || statusFilter !== 'all' || searchQuery.trim()) && (
+                <Button variant="outline" size="sm" className="h-7 px-2" onClick={() => { setTypeFilter('all'); setStatusFilter('all'); onSearchChange?.(''); setCurrentPage(1); }}>Clear all</Button>
+              )}
             </div>
-            <div>
+            {/* Advanced controls toggle on mobile */}
+            <div className="flex items-center gap-2 sm:hidden">
+              <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setShowAdvanced((v) => !v)}>
+                {showAdvanced ? 'Hide' : 'More'}
+              </Button>
+            </div>
+          </div>
+
+          {/* Filter editor (selects) */}
+          {showFilters && (
+            <div className="flex flex-wrap gap-3 items-center">
+              <div className="flex items-center gap-2">
+                <Select value={typeFilter} onValueChange={(v: React.SetStateAction<string>) => { setTypeFilter(v); setCurrentPage(1); }}>
+                  <SelectTrigger className="w-[150px]"><SelectValue placeholder="Device Type" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="Router">Router</SelectItem>
+                    <SelectItem value="Switch">Switch</SelectItem>
+                    <SelectItem value="SXT">SXT</SelectItem>
+                    <SelectItem value="LHG">LHG</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Select value={statusFilter} onValueChange={(v: any) => { setStatusFilter(v); setCurrentPage(1); }}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
+                <SelectTrigger className="w-[150px]"><SelectValue placeholder="Status" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="online">Online</SelectItem>
                   <SelectItem value="offline">Offline</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={String(pageSize)} onValueChange={(v: any) => { setPageSize(Number(v)); setCurrentPage(1); }}>
+                <SelectTrigger className="w-[120px]"><SelectValue placeholder="Rows/page" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5 / page</SelectItem>
+                  <SelectItem value="10">10 / page</SelectItem>
+                  <SelectItem value="20">20 / page</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+          )}
 
-            <Select value={String(pageSize)} onValueChange={(v: any) => { setPageSize(Number(v)); setCurrentPage(1); }}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="Rows/page" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5 / page</SelectItem>
-                <SelectItem value="10">10 / page</SelectItem>
-                <SelectItem value="20">20 / page</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
+          {/* Advanced controls (always visible on sm+, collapsible on mobile) */}
+          <div className={`flex items-center gap-2 ${showAdvanced ? '' : 'hidden'} sm:flex`}>
             <Button variant="outline" className="gap-2" onClick={() => checkOnlineFor(paginatedDevices)}>
               Check Online (page)
             </Button>
