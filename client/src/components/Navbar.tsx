@@ -78,6 +78,13 @@ export const Navbar: React.FC<NavbarProps> = ({
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // Allow other components to open the help modal programmatically
+  useEffect(() => {
+    const open = () => setHelpOpen(true);
+    window.addEventListener('open-help', open as any);
+    return () => window.removeEventListener('open-help', open as any);
+  }, []);
+
   useEffect(() => {
     if (!onTabChange) return;
     const handler = (e: KeyboardEvent) => {

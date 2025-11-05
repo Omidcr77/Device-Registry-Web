@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, ArrowUpDown, Edit, Trash2, Filter, Download, Copy, Search, X } from 'lucide-react';
+import { Plus, ArrowUpDown, Edit, Trash2, Filter, Download, Copy, Search, X, HelpCircle } from 'lucide-react';
 import type { Device as MockDevice } from '../lib/mockData';
 import * as api from '../lib/api';
 import { toast } from 'sonner';
@@ -11,6 +11,7 @@ import { Label } from './ui/label';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from './ui/table';
+import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 import { Skeleton } from './ui/skeleton';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 
@@ -97,6 +98,10 @@ export const DeviceList: React.FC<DeviceListProps> = ({
     return () => document.removeEventListener('visibilitychange', onVis);
   }, []);
   const [editing, setEditing] = useState<{ id: string; field: 'name' | 'location'; value: string } | null>(null);
+  const [editHintSeen, setEditHintSeen] = useState<boolean>(() => {
+    try { return localStorage.getItem('editHintSeen') === '1'; } catch { return false; }
+  });
+  const markEditHintSeen = () => { try { localStorage.setItem('editHintSeen', '1'); } catch {}; setEditHintSeen(true); };
 
   // Add form
   const [newDeviceCode, setNewDeviceCode] = useState('');
@@ -300,11 +305,20 @@ export const DeviceList: React.FC<DeviceListProps> = ({
         />
       );
     }
-    return (
-      <span onDoubleClick={() => handleInlineEdit(id, field, value)} title="Double-click to edit" className="cursor-text">
+    const content = (
+      <span onDoubleClick={() => handleInlineEdit(id, field, value)} className="cursor-text" onMouseLeave={() => { if (!editHintSeen) markEditHintSeen(); }}>
         {value}
       </span>
     );
+    if (!editHintSeen) {
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>{content}</TooltipTrigger>
+          <TooltipContent sideOffset={6}>Double-click to edit</TooltipContent>
+        </Tooltip>
+      );
+    }
+    return content;
   };
 
   const onlineCount = paginatedDevices.filter((d) => onlineMap[d.id] === true).length;
@@ -454,6 +468,23 @@ export const DeviceList: React.FC<DeviceListProps> = ({
               <X className="w-4 h-4" />
             </button>
           )}
+          {/* Shortcuts hint */}
+          <div className="absolute right-10 top-1/2 -translate-y-1/2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => { try { window.dispatchEvent(new Event('open-help')); } catch {} }}
+                  className="p-1 rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700"
+                  aria-label="Keyboard shortcuts"
+                  title="Keyboard shortcuts"
+                >
+                  <HelpCircle className="w-4 h-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent sideOffset={6}>Keyboard shortcuts (press ?)</TooltipContent>
+            </Tooltip>
+          </div>
         </div>
 
         <div className="flex flex-col gap-3">
