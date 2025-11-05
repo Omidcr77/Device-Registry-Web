@@ -4,7 +4,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { ENV } from './config/env.js';
-import { errorHandler } from './middleware/error.js';
 
 const app = express();
 
@@ -59,8 +58,5 @@ app.options('*', cors({
   credentials: true,
   optionsSuccessStatus: 204,
 }));
-
-// Error handling middleware
-app.use(errorHandler);
 
 export default app;

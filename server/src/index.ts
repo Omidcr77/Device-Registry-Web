@@ -7,6 +7,8 @@ import userRoutes from './routes/user.routes.js';
 import { updateDeviceStatus, isInMaintenance, setWsServer, broadcastStatus } from './services/status.service.js';
 import { connectMongo, DeviceModel } from './db/mongo.js';
 import searchRoutes from './routes/search.routes.js';
+import healthRoutes from './routes/health.routes.js';
+import { errorHandler } from './middleware/error.js';
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -17,6 +19,7 @@ app.use('/api/search', searchRoutes);
 import reportRoutes from './routes/report.routes.js';
 
 app.use('/api/reports', reportRoutes);
+app.use('/api/health', healthRoutes);
 
 const getLanIps = () => {
   const nets = os.networkInterfaces();
@@ -88,5 +91,8 @@ const server = app.listen(ENV.PORT, '0.0.0.0', () => {
     console.log('ws not installed; live updates disabled');
   }
 })();
+
+// Error handler should be last in the middleware chain
+app.use(errorHandler);
 
 

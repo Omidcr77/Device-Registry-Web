@@ -73,6 +73,13 @@ export async function pingIp(ip: string) {
   return request(`/devices/ping/ip?${q.toString()}`);
 }
 
+export async function getStatusSummary(ids?: string[]) {
+  const qs = new URLSearchParams();
+  if (ids && ids.length) qs.append('ids', ids.join(','));
+  const s = qs.toString();
+  return request(`/devices/summary${s ? `?${s}` : ''}`);
+}
+
 // Users
 export async function getUsers() {
   return request('/users');

@@ -9,6 +9,7 @@ const router = Router();
 // List & read (all authenticated)
 router.get('/', auth(true), ctrl.list);
 router.get('/ping/ip', auth(true), ctrl.ping);
+router.get('/summary', auth(true), statusCtrl.getSummary);
 router.get('/:id', auth(true), ctrl.getOne);
 router.post('/:id/status/mock', auth(true), requireRole('ADMIN'), statusCtrl.setMockStatus);
 router.get('/:id/status', auth(true), statusCtrl.getStatus);
