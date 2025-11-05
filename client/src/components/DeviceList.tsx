@@ -13,7 +13,7 @@ import {
 } from './ui/table';
 import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 import { Skeleton } from './ui/skeleton';
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
