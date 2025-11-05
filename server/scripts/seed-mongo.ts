@@ -7,9 +7,13 @@ async function main() {
   const adminEmail = 'admin@example.com';
   const managerEmail = 'manager@example.com';
   const viewerEmail = 'viewer@example.com';
+  const adminUsername = 'admin';
+  const managerUsername = 'manager';
+  const viewerUsername = 'viewer';
 
-  await UserModel.updateOne({ email: adminEmail }, {
+  await UserModel.updateOne({ username: adminUsername }, {
     $setOnInsert: {
+      username: adminUsername,
       email: adminEmail,
       password: await bcrypt.hash('Admin@1234', 10),
       role: 'ADMIN',
@@ -18,8 +22,9 @@ async function main() {
     }
   }, { upsert: true });
 
-  await UserModel.updateOne({ email: managerEmail }, {
+  await UserModel.updateOne({ username: managerUsername }, {
     $setOnInsert: {
+      username: managerUsername,
       email: managerEmail,
       password: await bcrypt.hash('Manager@12345', 10),
       role: 'MANAGER',
@@ -28,8 +33,9 @@ async function main() {
     }
   }, { upsert: true });
 
-  await UserModel.updateOne({ email: viewerEmail }, {
+  await UserModel.updateOne({ username: viewerUsername }, {
     $setOnInsert: {
+      username: viewerUsername,
       email: viewerEmail,
       password: await bcrypt.hash('Viewer@12345', 10),
       role: 'VIEWER',
@@ -52,4 +58,3 @@ async function main() {
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
-

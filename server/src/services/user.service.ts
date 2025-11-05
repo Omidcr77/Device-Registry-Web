@@ -3,10 +3,10 @@ import { connectMongo, UserModel } from '../db/mongo.js';
 
 export async function listUsers() {
   await connectMongo();
-  const users: any[] = await UserModel.find({}, { email: 1, role: 1, locations: 1, status: 1, settings: 1, createdAt: 1 }).sort({ createdAt: -1 }).lean();
+  const users: any[] = await UserModel.find({}, { username: 1, email: 1, role: 1, locations: 1, status: 1, settings: 1, createdAt: 1 }).sort({ createdAt: -1 }).lean();
   return users.map(u => ({
     id: String(u._id),
-    email: u.email,
+    username: u.username,
     role: String(u.role || '').toLowerCase(),
     locations: Array.isArray(u.locations) ? u.locations : [],
     status: String(u.status || '').toLowerCase(),
@@ -15,11 +15,11 @@ export async function listUsers() {
   }));
 }
 
-export async function createUser(data: { email: string; password: string; role: string; locations: string[]; settings?: any }) {
+export async function createUser(data: { username: string; password: string; role: string; locations: string[]; settings?: any }) {
   const hashedPassword = await bcrypt.hash(data.password, 10);
   await connectMongo();
   const user: any = await UserModel.create({
-    email: data.email,
+    username: data.username,
     password: hashedPassword,
     role: data.role.toUpperCase(),
     locations: data.locations || [],
@@ -28,7 +28,7 @@ export async function createUser(data: { email: string; password: string; role: 
   });
   return {
     id: String(user._id),
-    email: user.email,
+    username: user.username,
     role: String(user.role || '').toLowerCase(),
     locations: user.locations || [],
     status: String(user.status || '').toLowerCase(),
@@ -37,10 +37,10 @@ export async function createUser(data: { email: string; password: string; role: 
   };
 }
 
-export async function updateUser(id: string, data: { email?: string; role?: string; locations?: string[]; status?: string; settings?: any; name?: string }) {
+export async function updateUser(id: string, data: { username?: string; role?: string; locations?: string[]; status?: string; settings?: any; name?: string }) {
   await connectMongo();
   const updateData: any = {};
-  if (data.email) updateData.email = data.email;
+  if (data.username) updateData.username = data.username;
   if (data.role) updateData.role = data.role.toUpperCase();
   if (data.locations) updateData.locations = data.locations;
   if (data.status) updateData.status = data.status.toUpperCase();
@@ -50,7 +50,7 @@ export async function updateUser(id: string, data: { email?: string; role?: stri
   if (!user) throw Object.assign(new Error('User not found'), { code: 'P2025' });
   return {
     id: String(user._id),
-    email: user.email,
+    username: user.username,
     role: String(user.role || '').toLowerCase(),
     locations: user.locations || [],
     status: String(user.status || '').toLowerCase(),

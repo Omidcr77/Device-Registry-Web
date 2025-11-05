@@ -163,7 +163,7 @@ export const Settings: React.FC = () => {
   };
 
   const devicesSampleCsv = `code,type,name,customer,location,installDate,ip\nDEV-001,Router,Core Router,Acme HQ,DataCenter,2025-01-15,10.0.0.1\nDEV-002,Switch,Floor Switch,Acme HQ,Floor 3,2025-02-01,10.0.3.5\n`;
-  const usersSampleCsv = `email,role,locations,status,name,password\nmanager@example.com,MANAGER,"[\"HQ\",\"DC1\"]",ACTIVE,Manager One,$2b$10$replace_with_bcrypt_hash\nviewer@example.com,VIEWER,[],ACTIVE,Viewer One,$2b$10$replace_with_bcrypt_hash\n`;
+  const usersSampleCsv = `username,role,locations,status,name,password\nmanager,MANAGER,"[\"HQ\",\"DC1\"]",ACTIVE,Manager One,$2b$10$replace_with_bcrypt_hash\nviewer,VIEWER,[],ACTIVE,Viewer One,$2b$10$replace_with_bcrypt_hash\n`;
 
   const parseHeader = (text: string): string[] => {
     const firstLine = (text.split(/\r?\n/, 1)[0] || '').trim();
@@ -604,7 +604,7 @@ export const Settings: React.FC = () => {
 
           <div className="space-y-2">
             <Label>Import Users (CSV)</Label>
-            <p className="text-xs text-gray-600 dark:text-gray-400">Columns: email,role,locations,status,name,password (hashed)</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400">Columns: username,role,locations,status,name,password (hashed)</p>
             <input
               type="file"
               accept=".csv,text/csv"
@@ -614,7 +614,7 @@ export const Settings: React.FC = () => {
                 try {
                   const text = await file.text();
                   const cols = normalizeCols(parseHeader(text));
-                  const required = ['email','password'];
+                  const required = ['username','password'];
                   const missing = required.filter((r) => !cols.includes(r));
                   if (missing.length) {
                     const msg = `Invalid CSV header. Missing: ${missing.join(', ')}`;
@@ -669,3 +669,9 @@ export const Settings: React.FC = () => {
     </div>
   );
 };
+
+
+
+
+
+

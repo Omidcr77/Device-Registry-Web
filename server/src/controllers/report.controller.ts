@@ -62,9 +62,9 @@ export async function exportReport(req: Request, res: Response) {
     const q: any = {};
     if (from) q.createdAt = { ...(q.createdAt || {}), $gte: from };
     if (to) q.createdAt = { ...(q.createdAt || {}), $lte: to };
-    const items = await UserModel.find(q, { email: 1, role: 1, status: 1, locations: 1, createdAt: 1 }).sort({ createdAt: -1 }).lean();
+    const items = await UserModel.find(q, { username: 1, role: 1, status: 1, locations: 1, createdAt: 1 }).sort({ createdAt: -1 }).lean();
     rows = items.map((u: any) => ({
-      email: u.email,
+      username: u.username,
       role: u.role,
       status: u.status,
       locations: Array.isArray(u.locations) ? u.locations.join('; ') : '',

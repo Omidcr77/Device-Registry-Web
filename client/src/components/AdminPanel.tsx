@@ -51,11 +51,11 @@ export const AdminPanel: React.FC<{ onlineUsers?: number }> = ({ onlineUsers }) 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [editEmail, setEditEmail] = useState('');
+  const [editUsername, setEditUsername] = useState('');
   const [editRole, setEditRole] = useState<'admin' | 'manager' | 'viewer'>('viewer');
   const [editLocations, setEditLocations] = useState('');
 
-  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserUsername, setNewUserUsername] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
   const [newUserRole, setNewUserRole] = useState<'admin' | 'manager' | 'viewer'>('viewer');
   const [newUserLocations, setNewUserLocations] = useState('');
@@ -94,7 +94,7 @@ export const AdminPanel: React.FC<{ onlineUsers?: number }> = ({ onlineUsers }) 
   };
 
   const handleCreateUser = async () => {
-    if (!newUserEmail || !newUserPassword) {
+    if (!newUserUsername || !newUserPassword) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -102,14 +102,14 @@ export const AdminPanel: React.FC<{ onlineUsers?: number }> = ({ onlineUsers }) 
     try {
       const locations = newUserLocations ? newUserLocations.split(',').map(l => l.trim()) : [];
       await api.createUser({
-        email: newUserEmail,
+        username: newUserUsername,
         password: newUserPassword,
         role: newUserRole,
         locations,
       });
       toast.success('User created successfully');
       setIsCreateDialogOpen(false);
-      setNewUserEmail('');
+      setNewUserUsername('');
       setNewUserPassword('');
       setNewUserRole('viewer');
       setNewUserLocations('');
@@ -137,7 +137,7 @@ export const AdminPanel: React.FC<{ onlineUsers?: number }> = ({ onlineUsers }) 
 
   const handleEditUser = (user: User) => {
     setSelectedUser(user);
-    setEditEmail(user.email);
+    setEditUsername((user as any).username || '');
     setEditRole(user.role as any);
     setEditLocations(user.locations.join(', '));
     setIsEditDialogOpen(true);
@@ -265,7 +265,7 @@ export const AdminPanel: React.FC<{ onlineUsers?: number }> = ({ onlineUsers }) 
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50 dark:bg-slate-800/50">
-                <TableHead>Email</TableHead>
+                <TableHead>Username</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Locations</TableHead>
                 <TableHead>Status</TableHead>
@@ -279,7 +279,7 @@ export const AdminPanel: React.FC<{ onlineUsers?: number }> = ({ onlineUsers }) 
                   key={user.id}
                   className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors"
                 >
-                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{(user as any).username}</TableCell>
                   <TableCell>{getRoleBadge(user.role)}</TableCell>
                   <TableCell className="text-gray-600 dark:text-gray-400">
                     {user.locations.join(', ')}
@@ -350,13 +350,13 @@ export const AdminPanel: React.FC<{ onlineUsers?: number }> = ({ onlineUsers }) 
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="email">Email *</Label>
+              <Label htmlFor="username">Username *</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="user@company.com"
-                value={newUserEmail}
-                onChange={(e) => setNewUserEmail(e.target.value)}
+                id="username"
+                type="text"
+                placeholder="e.g., jsmith"
+                value={newUserUsername}
+                onChange={(e) => setNewUserUsername(e.target.value)}
               />
             </div>
             <div className="grid gap-2">
@@ -418,8 +418,8 @@ export const AdminPanel: React.FC<{ onlineUsers?: number }> = ({ onlineUsers }) 
           {selectedUser && (
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="edit-email">Email</Label>
-                <Input id="edit-email" type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} />
+                <Label htmlFor="edit-username">Username</Label>
+                <Input id="edit-username" type="text" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="edit-role">Role</Label>
@@ -449,7 +449,7 @@ export const AdminPanel: React.FC<{ onlineUsers?: number }> = ({ onlineUsers }) 
                 if (!selectedUser) return;
                 try {
                   const locations = editLocations ? editLocations.split(',').map(l => l.trim()).filter(Boolean) : [];
-                  await api.updateUser(selectedUser.id, { email: editEmail, role: editRole, locations });
+                  await api.updateUser(selectedUser.id, { username: editUsername, role: editRole, locations });
                   toast.success('User updated successfully');
                   setIsEditDialogOpen(false);
                   setSelectedUser(null);
@@ -476,7 +476,7 @@ export const AdminPanel: React.FC<{ onlineUsers?: number }> = ({ onlineUsers }) 
           <DialogHeader>
             <DialogTitle>Change Password</DialogTitle>
             <DialogDescription>
-              Change the password for {selectedUser?.email}.
+              Change the password for {(selectedUser as any)?.username}.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -522,7 +522,7 @@ export const AdminPanel: React.FC<{ onlineUsers?: number }> = ({ onlineUsers }) 
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the user account
-              for <span className="font-semibold">{selectedUser?.email}</span> and remove their data from the system.
+              for <span className="font-semibold">{(selectedUser as any)?.username}</span> and remove their data from the system.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

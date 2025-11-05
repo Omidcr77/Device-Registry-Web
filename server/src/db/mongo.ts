@@ -19,7 +19,8 @@ export async function connectMongo() {
 }
 
 const UserSchema = new Schema({
-  email: { type: String, unique: true, required: true },
+  username: { type: String, unique: true, required: true },
+  email: { type: String },
   password: { type: String, required: true },
   role: { type: String, default: 'VIEWER' },
   locations: { type: [String], default: [] },

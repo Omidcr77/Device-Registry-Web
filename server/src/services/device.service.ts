@@ -21,16 +21,16 @@ export async function listDevices(query: any) {
 
   // Enrich with creator info (name/email)
   const creatorIds = Array.from(new Set(rawItems.map((d: any) => String(d.createdById || '')).filter(Boolean)));
-  let creatorMap: Record<string, { name?: string; email?: string }> = {};
+  let creatorMap: Record<string, { name?: string; username?: string; email?: string }> = {};
   if (creatorIds.length) {
-    const users: any[] = await UserModel.find({ _id: { $in: creatorIds } }, { name: 1, email: 1 }).lean();
-    for (const u of users) creatorMap[String(u._id)] = { name: u.name, email: u.email };
+    const users: any[] = await UserModel.find({ _id: { $in: creatorIds } }, { name: 1, username: 1, email: 1 }).lean();
+    for (const u of users) creatorMap[String(u._id)] = { name: u.name, username: u.username, email: u.email };
   }
 
   const items = rawItems.map((d: any) => {
     const id = String(d._id);
     const creator = d.createdById ? creatorMap[String(d.createdById)] : undefined;
-    const createdByName = creator?.name || creator?.email || undefined;
+    const createdByName = creator?.name || creator?.username || creator?.email || undefined;
     return { ...d, id, createdByName } as any;
   });
   return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
@@ -43,8 +43,8 @@ export async function getDevice(id: string) {
   // Enrich with creator info
   let createdByName: string | undefined;
   if (device.createdById) {
-    const u: any = await UserModel.findById(device.createdById, { name: 1, email: 1 }).lean();
-    if (u) createdByName = u.name || u.email;
+    const u: any = await UserModel.findById(device.createdById, { name: 1, username: 1, email: 1 }).lean();
+    if (u) createdByName = u.name || u.username || u.email;
   }
   return { ...device, createdByName } as any;
 }

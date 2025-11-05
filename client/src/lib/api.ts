@@ -22,10 +22,10 @@ async function request(path: string, opts: RequestInit = {}) {
 }
 
 // Auth
-export async function login(email: string, password: string) {
+export async function login(username: string, password: string) {
   const data = await request('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ username, password }),
   });
   if (data?.token) localStorage.setItem('token', data.token);
   return data;
@@ -85,11 +85,11 @@ export async function getUsers() {
   return request('/users');
 }
 
-export async function createUser(data: { email: string; password: string; role: string; locations: string[] }) {
+export async function createUser(data: { username: string; password: string; role: string; locations: string[] }) {
   return request('/users', { method: 'POST', body: JSON.stringify(data) });
 }
 
-export async function updateUser(id: string, data: { email?: string; role?: string; locations?: string[]; status?: string }) {
+export async function updateUser(id: string, data: { username?: string; role?: string; locations?: string[]; status?: string }) {
   return request(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 }
 

@@ -12,7 +12,7 @@ export function auth(required = true) {
     const token = header.replace('Bearer ', '');
     try {
       const decoded = jwt.verify(token, ENV.JWT_SECRET) as any;
-      req.user = { id: decoded.id, role: decoded.role, email: decoded.email };
+      req.user = { id: decoded.id, role: decoded.role, username: decoded.username } as any;
       return next();
     } catch (e) {
       return res.status(401).json({ message: 'Invalid token' });

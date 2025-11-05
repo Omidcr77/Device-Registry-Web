@@ -14,9 +14,10 @@ function parseObject(str: unknown): Record<string, any> {
   try { const v = JSON.parse(str); return v && typeof v === 'object' ? v : {}; } catch { return {}; }
 }
 
-export async function login(email: string, password: string) {
+export async function login(username: string, password: string) {
   await connectMongo();
-  const user: any = await UserModel.findOne({ email }).lean();
+  // Allow login via username (primary). Fallback to email for compatibility.
+  const user: any = await UserModel.findOne({ $or: [ { username }, { email: username } ] }).lean();
   if (!user) throw Object.assign(new Error('Invalid credentials'), { status: 401 });
 
   const ok = await bcrypt.compare(password, user.password as string);
@@ -28,7 +29,7 @@ export async function login(email: string, password: string) {
     throw Object.assign(new Error('Account is inactive'), { status: 403 });
   }
 
-  const token = jwt.sign({ id: String(user._id), role: user.role, email: user.email }, ENV.JWT_SECRET, { expiresIn: '7d' });
+  const token = jwt.sign({ id: String(user._id), role: user.role, username: user.username }, ENV.JWT_SECRET, { expiresIn: '7d' });
   return { token, user: serializeUser(user) };
 }
 
@@ -44,6 +45,7 @@ function serializeUser(u: any) {
   const settings  = (u.settings && typeof u.settings === 'object') ? u.settings : {};
   return {
     id: String(u._id ?? u.id),
+    username: u.username,
     email: u.email,
     name: u.name ?? 'User',
     role: u.role,

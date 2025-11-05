@@ -1,13 +1,13 @@
 // Notification and realtime status end-to-end test
 // Usage:
-//   BASE=http://localhost:4000/api ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=Admin@1234 \
-//   TEST_EMAIL=manager@example.com TEST_PASSWORD=Manager@12345 \
+//   BASE=http://localhost:4000/api ADMIN_USERNAME=admin@example.com ADMIN_PASSWORD=Admin@1234 \
+//   TEST_USERNAME=manager@example.com TEST_PASSWORD=Manager@12345 \
 //   node scripts/test-notifications.mjs
 
 const BASE = process.env.BASE || 'http://localhost:4000/api';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com';
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@1234';
-const TEST_EMAIL = process.env.TEST_EMAIL || 'manager@example.com';
+const TEST_USERNAME = process.env.TEST_USERNAME || 'manager';
 const TEST_PASSWORD = process.env.TEST_PASSWORD || 'Manager@12345';
 
 import { WebSocket } from 'ws';
@@ -21,8 +21,8 @@ async function req(path, opts = {}) {
   return data;
 }
 
-async function login(email, password) {
-  const data = await req('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+async function login(username, password) {
+  const data = await req('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
   if (!data?.token) throw new Error('No token from login');
   return data;
 }
@@ -46,11 +46,11 @@ async function main() {
   });
 
   console.log('Logging in as admin…');
-  const admin = await login(ADMIN_EMAIL, ADMIN_PASSWORD);
+  const admin = await login(ADMIN_USERNAME, ADMIN_PASSWORD);
   const adminAuth = { Authorization: `Bearer ${admin.token}` };
 
   console.log('Logging in as test user…');
-  const testUser = await login(TEST_EMAIL, TEST_PASSWORD);
+  const testUser = await login(TEST_USERNAME, TEST_PASSWORD);
   await new Promise(r => setTimeout(r, 750));
 
   console.log('Logging out test user…');
@@ -70,8 +70,8 @@ async function main() {
   const authEvents = events.filter(e => e?.type === 'user-auth');
   const statusEvents = events.filter(e => e?.type === 'device-status');
   console.log('Received events:', { auth: authEvents.length, status: statusEvents.length });
-  const loginEv = authEvents.find(e => e.action === 'login' && e.user?.email === TEST_EMAIL);
-  const logoutEv = authEvents.find(e => e.action === 'logout' && e.user?.email === TEST_EMAIL);
+  const loginEv = authEvents.find(e => e.action === 'login' && e.user?.username === TEST_USERNAME);
+  const logoutEv = authEvents.find(e => e.action === 'logout' && e.user?.username === TEST_USERNAME);
   const anyStatus = statusEvents.some(e => typeof e.reachable === 'boolean');
 
   console.log('Auth login event:', !!loginEv);
@@ -86,4 +86,5 @@ async function main() {
 }
 
 main().catch((e) => { console.error('Test failed:', e?.message || e); process.exit(1); });
+
 

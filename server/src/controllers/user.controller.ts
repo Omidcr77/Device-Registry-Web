@@ -9,15 +9,15 @@ export async function list(req: Request, res: Response) {
 
 export async function create(req: Request, res: Response) {
   try {
-    const { email, password, role, locations } = req.body;
-    if (!email || !password || !role) {
-      return res.status(400).json({ error: 'Email, password, and role are required' });
+    const { username, password, role, locations } = req.body;
+    if (!username || !password || !role) {
+      return res.status(400).json({ error: 'Username, password, and role are required' });
     }
-    const user = await createUser({ email, password, role, locations: locations || [] });
+    const user = await createUser({ username, password, role, locations: locations || [] });
     res.status(201).json(user);
   } catch (error: any) {
     if (error.code === 'P2002') {
-      res.status(409).json({ error: 'Email already exists' });
+      res.status(409).json({ error: 'Username already exists' });
     } else {
       res.status(500).json({ error: 'Failed to create user' });
     }
@@ -27,7 +27,7 @@ export async function create(req: Request, res: Response) {
 export async function update(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const { email, role, locations, status, settings, name } = req.body || {};
+    const { username, role, locations, status, settings, name } = req.body || {};
     // @ts-ignore
     const currentUser = req.user;
     if (!currentUser) return res.status(401).json({ error: 'Unauthorized' });
@@ -35,7 +35,7 @@ export async function update(req: Request, res: Response) {
     // Allow self-update for limited fields
     if (currentUser.id === id) {
       const payload: any = {};
-      if (typeof email === 'string' && email.trim()) payload.email = email.trim();
+      if (typeof username === 'string' && username.trim()) payload.username = username.trim();
       if (Array.isArray(locations)) payload.locations = locations;
       if (typeof name === 'string') payload.name = name;
       const user = await updateUser(id, payload);
@@ -46,7 +46,7 @@ export async function update(req: Request, res: Response) {
     if (String(currentUser.role || '').toUpperCase() !== 'ADMIN') {
       return res.status(403).json({ error: 'Forbidden' });
     }
-    const user = await updateUser(id, { email, role, locations, status, settings, name });
+    const user = await updateUser(id, { username, role, locations, status, settings, name });
     res.json(user);
   } catch (error: any) {
     if (error.code === 'P2025') {
@@ -189,9 +189,9 @@ function parseCsv(text: string): Array<Record<string,string>> {
 export async function exportUsers(req: Request, res: Response) {
   try {
     await connectMongo();
-    const users: any[] = await UserModel.find({}, { email: 1, role: 1, locations: 1, status: 1, name: 1, password: 1, createdAt: 1 }).sort({ createdAt: -1 }).lean();
+    const users: any[] = await UserModel.find({}, { username: 1, role: 1, locations: 1, status: 1, name: 1, password: 1, createdAt: 1 }).sort({ createdAt: -1 }).lean();
     const rows = users.map(u => ({
-      email: u.email,
+      username: u.username,
       role: String(u.role || ''),
       locations: JSON.stringify(Array.isArray(u.locations) ? u.locations : []),
       status: String(u.status || ''),
@@ -217,8 +217,8 @@ export async function importUsers(req: Request, res: Response) {
     await connectMongo();
     let created = 0, updated = 0, skipped = 0;
     for (const row of rows) {
-      const email = (row.email || row.Email || '').trim().toLowerCase();
-      if (!email) { skipped++; continue; }
+      const username = (row.username || row.Username || '').trim();
+      if (!username) { skipped++; continue; }
       const role = (row.role || row.Role || 'VIEWER').toUpperCase();
       const status = (row.status || row.Status || 'ACTIVE').toUpperCase();
       const name = (row.name || row.Name || '').trim();
@@ -228,7 +228,7 @@ export async function importUsers(req: Request, res: Response) {
         try { const p = JSON.parse(locRaw); if (Array.isArray(p)) locations = p.map(String); } catch { locations = String(locRaw).split(';').map(s => s.trim()).filter(Boolean); }
       }
       const pwdHash = (row.password || row.Password || '').trim();
-      const existing: any = await UserModel.findOne({ email }, { _id: 1 }).lean();
+      const existing: any = await UserModel.findOne({ username }, { _id: 1 }).lean();
       if (existing) {
         const setData: any = { role, status, locations, name };
         // only update password if provided
@@ -237,7 +237,7 @@ export async function importUsers(req: Request, res: Response) {
         updated++;
       } else {
         if (!pwdHash) { skipped++; continue; } // require password for create
-        await UserModel.create({ email, role, status, locations, name, password: pwdHash });
+        await UserModel.create({ username, role, status, locations, name, password: pwdHash });
         created++;
       }
     }

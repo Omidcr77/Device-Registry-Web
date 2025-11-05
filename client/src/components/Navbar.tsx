@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 
 interface User {
   id: string;
-  email: string;
+  username: string;
   name: string;
   role: string;
   status: string;
@@ -101,7 +101,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     return () => window.removeEventListener('keydown', handler);
   }, [onTabChange]);
 
-  const displayName = currentUser?.name || currentUser?.email || 'User';
+  const displayName = currentUser?.name || (currentUser as any)?.username || 'User';
   const isAdmin = (currentUser?.role || '').toLowerCase() === 'admin';
   const status = (currentUser?.status || 'active').toLowerCase();
 
@@ -263,8 +263,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </Avatar>
                   <div className="min-w-0">
                     <div className="font-medium truncate text-gray-900 dark:text-white">{displayName}</div>
-                    {currentUser?.email && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{currentUser.email}</div>
+                    {(currentUser as any)?.username && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{(currentUser as any).username}</div>
                     )}
                     <div className="mt-1 flex items-center gap-2">
                       {isAdmin && (

@@ -12,7 +12,7 @@ export interface Device {
 
 export interface User {
   id: string;
-  email: string;
+  username: string;
   role: 'admin' | 'manager' | 'viewer';
   locations: string[];
   status: 'active' | 'inactive';
@@ -32,9 +32,9 @@ export const mockDevices: Device[] = [
 ];
 
 export const mockUsers: User[] = [
-  { id: 'U001', email: 'admin@ictregistry.com', role: 'admin', locations: ['All Locations'], status: 'active' },
-  { id: 'U002', email: 'john.manager@company.com', role: 'manager', locations: ['Building A', 'Building B'], status: 'active' },
-  { id: 'U003', email: 'sarah.viewer@company.com', role: 'viewer', locations: ['Building C'], status: 'active' },
-  { id: 'U004', email: 'mike.admin@company.com', role: 'admin', locations: ['All Locations'], status: 'active' },
-  { id: 'U005', email: 'lisa.manager@company.com', role: 'manager', locations: ['Building D'], status: 'inactive' },
+  { id: 'U001', username: 'admin', role: 'admin', locations: ['All Locations'], status: 'active' },
+  { id: 'U002', username: 'john.manager', role: 'manager', locations: ['Building A', 'Building B'], status: 'active' },
+  { id: 'U003', username: 'sarah.viewer', role: 'viewer', locations: ['Building C'], status: 'active' },
+  { id: 'U004', username: 'mike.admin', role: 'admin', locations: ['All Locations'], status: 'active' },
+  { id: 'U005', username: 'lisa.manager', role: 'manager', locations: ['Building D'], status: 'inactive' },
 ];

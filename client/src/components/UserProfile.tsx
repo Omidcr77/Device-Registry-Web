@@ -12,7 +12,7 @@ import { Badge } from './ui/badge';
 
 interface UserProfileShape {
   id: string;
-  email: string;
+  username: string;
   name?: string;
   role: string;
   locations: string[];
@@ -26,7 +26,7 @@ export const UserProfile: React.FC = () => {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const [editName, setEditName] = useState('');
-  const [editEmail, setEditEmail] = useState('');
+  const [editUsername, setEditUsername] = useState('');
   const [editLocations, setEditLocations] = useState('');
 
   const [newPassword, setNewPassword] = useState('');
@@ -38,7 +38,7 @@ export const UserProfile: React.FC = () => {
         const me = await api.me();
         setUser(me);
         setEditName(me.name || '');
-        setEditEmail(me.email);
+        setEditUsername(me.username);
         setEditLocations((me.locations || []).join(', '));
       } catch {
         toast.error('Failed to load profile');
@@ -46,7 +46,7 @@ export const UserProfile: React.FC = () => {
     })();
   }, []);
 
-  const initials = (name?: string, email?: string) => {
+  const initials = (name?: string, username?: string) => {
     const n = (name || '').trim();
     if (n) {
       const parts = n.split(/\s+/).filter(Boolean);
@@ -54,8 +54,8 @@ export const UserProfile: React.FC = () => {
       const second = parts[1]?.[0] || '';
       return (first + second).toUpperCase() || first.toUpperCase() || 'U';
     }
-    const em = (email || '').trim();
-    if (em) return em[0].toUpperCase();
+    const un = (username || '').trim();
+    if (un) return un[0].toUpperCase();
     return 'U';
   };
 
@@ -66,9 +66,7 @@ export const UserProfile: React.FC = () => {
         .split(',')
         .map((l) => l.trim())
         .filter(Boolean);
-      const emailValid = /.+@.+\..+/.test(editEmail);
-      if (!emailValid) { toast.error('Please enter a valid email'); return; }
-      await api.updateUser(user.id, { email: editEmail, locations, name: editName } as any);
+      await api.updateUser(user.id, { username: editUsername, locations, name: editName } as any);
       toast.success('Profile updated');
       setIsEditing(false);
       const updated = await api.me();
@@ -145,7 +143,7 @@ export const UserProfile: React.FC = () => {
         <div className="flex items-start gap-6">
           <Avatar className="h-20 w-20 ring-2 ring-white/50 dark:ring-white/10 shadow-sm">
             <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-xl font-semibold">
-              {initials(user.name, user.email)}
+              {initials(user.name, user.username)}
             </AvatarFallback>
           </Avatar>
 
@@ -175,8 +173,8 @@ export const UserProfile: React.FC = () => {
                   <Input id="name" value={editName} onChange={(e) => setEditName(e.target.value)} />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} />
+                  <Label htmlFor="username">Username</Label>
+                  <Input id="username" type="text" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="locations">Locations (comma-separated)</Label>
@@ -194,7 +192,7 @@ export const UserProfile: React.FC = () => {
                 <div className="text-xl font-semibold text-gray-900 dark:text-white">{user.name || 'User'}</div>
                 <div className="flex items-center gap-2">
                   <Mail className="w-5 h-5 text-gray-400" />
-                  <span className="text-gray-900 dark:text-white">{user.email}</span>
+                  <span className="text-gray-900 dark:text-white">{user.username}</span>
                 </div>
 
                 <div className="flex items-center gap-2">

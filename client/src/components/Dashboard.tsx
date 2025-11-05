@@ -17,7 +17,7 @@ interface DashboardProps {
 
 interface User {
   id: string;
-  email: string;
+  username: string;
   name: string;
   role: string;
   status: string;
@@ -168,10 +168,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               const allowSystem = currentUser?.settings?.notifications?.systemUpdates !== false;
               if (isAdmin && isOther && allowSystem && (role === 'MANAGER' || role === 'VIEWER')) {
                 const act = msg.action === 'logout' ? 'logged out' : 'logged in';
-                toast.message(`User ${msg.user.email} ${act}`);
+                const uname = (msg.user?.username || '').trim();
+                toast.message(`User ${uname} ${act}`);
                 // Also persist into bell alerts
                 setAlerts((prev) => [
-                  { title: `User ${act}`, body: msg.user.email, at: new Date().toLocaleString() } as any,
+                  { title: `User ${act}`, body: uname, at: new Date().toLocaleString() } as any,
                   ...prev,
                 ].slice(0, 50));
                 // Play a short beep

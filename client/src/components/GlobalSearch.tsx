@@ -46,7 +46,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ open, onOpenChange }
               <ul className="space-y-2">
                 {(results.users || []).map((u: any) => (
                   <li key={u.id} className="text-sm text-gray-900 dark:text-white">
-                    <span className="font-medium">{u.email}</span> <span className="text-gray-500 dark:text-gray-400">{u.role?.toLowerCase?.()}</span>
+                    <span className="font-medium">{u.username}</span> <span className="text-gray-500 dark:text-gray-400">{u.role?.toLowerCase?.()}</span>
                   </li>
                 ))}
                 {(!results.users || results.users.length === 0) && <li className="text-xs text-gray-400">No users</li>}
@@ -58,4 +58,3 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ open, onOpenChange }
     </Dialog>
   );
 };
-
