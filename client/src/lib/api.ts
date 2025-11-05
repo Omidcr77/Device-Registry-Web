@@ -2,12 +2,20 @@ export const API_BASE = ((import.meta as any).env?.VITE_API_BASE as string) || '
 
 async function request(path: string, opts: RequestInit = {}) {
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
     ...(opts.headers as Record<string, string> || {}),
   };
 
   const token = localStorage.getItem('token');
   if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  // Only set JSON content-type if we actually send a JSON string body
+  const hasCt = Object.keys(headers).some((k) => k.toLowerCase() === 'content-type');
+  if (!hasCt && typeof opts.body === 'string') {
+    const s = opts.body.trim();
+    if (s.startsWith('{') || s.startsWith('[')) {
+      headers['Content-Type'] = 'application/json';
+    }
+  }
 
   const res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
   const text = await res.text();
