@@ -1,0 +1,48 @@
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { ENV } from '../config/env.js';
+
+const prisma = new PrismaClient();
+
+function parseArray(str: unknown): string[] {
+  if (Array.isArray(str)) return str as string[];
+  if (typeof str !== 'string') return [];
+  try { const v = JSON.parse(str); return Array.isArray(v) ? v : []; } catch { return []; }
+}
+function parseObject(str: unknown): Record<string, any> {
+  if (str && typeof str === 'object') return str as Record<string, any>;
+  if (typeof str !== 'string') return {};
+  try { const v = JSON.parse(str); return v && typeof v === 'object' ? v : {}; } catch { return {}; }
+}
+
+export async function login(email: string, password: string) {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) throw Object.assign(new Error('Invalid credentials'), { status: 401 });
+
+  const ok = await bcrypt.compare(password, user.password);
+  if (!ok) throw Object.assign(new Error('Invalid credentials'), { status: 401 });
+
+  const token = jwt.sign({ id: user.id, role: user.role, email: user.email }, ENV.JWT_SECRET, { expiresIn: '7d' });
+  return { token, user: serializeUser(user) };
+}
+
+export async function me(userId: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw Object.assign(new Error('User not found'), { status: 404 });
+  return serializeUser(user);
+}
+
+function serializeUser(u: any) {
+  const locations = parseArray(u.locations);
+  const settings  = parseObject(u.settings);
+  return {
+    id: u.id,
+    email: u.email,
+    name: u.name ?? 'User',
+    role: u.role,
+    status: u.status,
+    locations,
+    settings,
+  };
+}
