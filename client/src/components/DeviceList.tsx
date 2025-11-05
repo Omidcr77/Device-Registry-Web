@@ -11,6 +11,7 @@ import { Label } from './ui/label';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from './ui/table';
+import { Skeleton } from './ui/skeleton';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 
 import {
@@ -536,7 +537,81 @@ export const DeviceList: React.FC<DeviceListProps> = ({
       {/* Table / Empty / Loading */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading devices…</div>
+          <>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50 dark:bg-slate-800/50">
+                    {([
+                      ['code', 'Code'],
+                      ['type', 'Type'],
+                      ['name', 'Name'],
+                      ['customer', 'Customer'],
+                      ['location', 'Location'],
+                      ['installDate', 'Install Date'],
+                      ['ip', 'IP'],
+                      ['createdAt', 'Created'],
+                      ['createdByName', 'Created By'],
+                    ] as [keyof Device, string][]).filter(([key]) => isColVisible(String(key))).map(([key, label]) => (
+                      <TableHead key={key} className="cursor-default">
+                        <div className="flex items-center gap-2">{label}</div>
+                      </TableHead>
+                    ))}
+                    {isColVisible('online') && <TableHead>Online</TableHead>}
+                    {canManageDevices && <TableHead>Actions</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.from({ length: Math.max(3, Math.min(8, pageSize)) }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell style={{display: isColVisible('code') ? undefined : 'none'}}>
+                        <Skeleton className="h-4 w-16" />
+                      </TableCell>
+                      <TableCell style={{display: isColVisible('type') ? undefined : 'none'}}>
+                        <Skeleton className="h-4 w-20" />
+                      </TableCell>
+                      <TableCell style={{display: isColVisible('name') ? undefined : 'none'}}>
+                        <Skeleton className="h-4 w-40" />
+                      </TableCell>
+                      <TableCell style={{display: isColVisible('customer') ? undefined : 'none'}}>
+                        <Skeleton className="h-4 w-32" />
+                      </TableCell>
+                      <TableCell style={{display: isColVisible('location') ? undefined : 'none'}}>
+                        <Skeleton className="h-4 w-40" />
+                      </TableCell>
+                      <TableCell style={{display: isColVisible('installDate') ? undefined : 'none'}}>
+                        <Skeleton className="h-4 w-28" />
+                      </TableCell>
+                      <TableCell style={{display: isColVisible('ip') ? undefined : 'none'}}>
+                        <Skeleton className="h-4 w-28" />
+                      </TableCell>
+                      <TableCell style={{display: isColVisible('createdAt') ? undefined : 'none'}}>
+                        <Skeleton className="h-4 w-36" />
+                      </TableCell>
+                      <TableCell style={{display: isColVisible('createdByName') ? undefined : 'none'}}>
+                        <Skeleton className="h-4 w-28" />
+                      </TableCell>
+                      {isColVisible('online') && (
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-3 w-10" />
+                          </div>
+                        </TableCell>
+                      )}
+                      {canManageDevices && (
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-8 w-8 rounded-md" />
+                            <Skeleton className="h-8 w-8 rounded-md" />
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         ) : filteredAndSortedDevices.length === 0 ? (
           <div className="p-10 text-center">
             <div className="text-gray-900 dark:text-white font-medium mb-1">No devices found</div>
