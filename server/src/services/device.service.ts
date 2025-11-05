@@ -1,6 +1,6 @@
 import { buildDeviceWhere, buildOrderBy } from '../utils/filters.js';
 import { execFile } from 'child_process';
-import { connectMongo, DeviceModel } from '../db/mongo.js';
+import { connectMongo, DeviceModel, UserModel } from '../db/mongo.js';
 
 // Prisma removed in favor of MongoDB
 
@@ -18,15 +18,35 @@ export async function listDevices(query: any) {
     DeviceModel.find(where).sort(orderBy).skip(skip).limit(pageSize).lean(),
     DeviceModel.countDocuments(where),
   ]);
-  const items = rawItems.map((d: any) => ({ ...d, id: String(d._id) }));
+
+  // Enrich with creator info (name/email)
+  const creatorIds = Array.from(new Set(rawItems.map((d: any) => String(d.createdById || '')).filter(Boolean)));
+  let creatorMap: Record<string, { name?: string; email?: string }> = {};
+  if (creatorIds.length) {
+    const users: any[] = await UserModel.find({ _id: { $in: creatorIds } }, { name: 1, email: 1 }).lean();
+    for (const u of users) creatorMap[String(u._id)] = { name: u.name, email: u.email };
+  }
+
+  const items = rawItems.map((d: any) => {
+    const id = String(d._id);
+    const creator = d.createdById ? creatorMap[String(d.createdById)] : undefined;
+    const createdByName = creator?.name || creator?.email || undefined;
+    return { ...d, id, createdByName } as any;
+  });
   return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
 }
 
 export async function getDevice(id: string) {
   await connectMongo();
-  const device = await DeviceModel.findById(id).lean();
+  const device: any = await DeviceModel.findById(id).lean();
   if (!device) throw Object.assign(new Error('Device not found'), { status: 404 });
-  return device;
+  // Enrich with creator info
+  let createdByName: string | undefined;
+  if (device.createdById) {
+    const u: any = await UserModel.findById(device.createdById, { name: 1, email: 1 }).lean();
+    if (u) createdByName = u.name || u.email;
+  }
+  return { ...device, createdByName } as any;
 }
 
 export async function createDevice(data: any, userId?: string) {

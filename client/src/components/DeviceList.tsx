@@ -31,7 +31,7 @@ import {
   PaginationLink, PaginationNext, PaginationPrevious,
 } from './ui/pagination';
 
-type Device = Omit<MockDevice, 'status'> & { status?: string };
+type Device = Omit<MockDevice, 'status'> & { status?: string; createdAt?: string; createdByName?: string };
 
 interface DeviceListProps {
   devices: Device[];
@@ -143,7 +143,7 @@ export const DeviceList: React.FC<DeviceListProps> = ({
       const av = a[sortField];
       const bv = b[sortField];
 
-      if (sortField === 'installDate') {
+      if (sortField === 'installDate' || sortField === 'createdAt') {
         const ad = new Date(av).getTime() || 0;
         const bd = new Date(bv).getTime() || 0;
         return (ad - bd) * dir;
@@ -404,10 +404,12 @@ export const DeviceList: React.FC<DeviceListProps> = ({
 
   const exportDevices = () => {
     const csv = [
-      ['Code', 'Type', 'Name', 'Customer', 'Location', 'Install Date', 'IP'],
+      ['Code', 'Type', 'Name', 'Customer', 'Location', 'Install Date', 'IP', 'Created', 'Created By'],
       ...filteredAndSortedDevices.map((d) => [
         d.code, d.type, d.name, d.customer, d.location,
         d.installDate, d.ip,
+        d.createdAt ? new Date(d.createdAt).toISOString() : '',
+        d.createdByName || '',
       ]),
     ]
       .map((row) => row.join(','))
@@ -508,7 +510,7 @@ export const DeviceList: React.FC<DeviceListProps> = ({
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>Visible Columns</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {['code','type','name','customer','location','installDate','ip','online'].map((k) => (
+                {['code','type','name','customer','location','installDate','ip','createdAt','createdByName','online'].map((k) => (
                   <DropdownMenuCheckboxItem key={k}
                     checked={isColVisible(k)}
                     onCheckedChange={(checked: boolean) => {
@@ -519,7 +521,7 @@ export const DeviceList: React.FC<DeviceListProps> = ({
                         return Array.from(set);
                       });
                     }}
-                  >{k === 'installDate' ? 'Install Date' : k.charAt(0).toUpperCase() + k.slice(1)}</DropdownMenuCheckboxItem>
+                  >{k === 'installDate' ? 'Install Date' : k === 'createdAt' ? 'Created' : k === 'createdByName' ? 'Created By' : k.charAt(0).toUpperCase() + k.slice(1)}</DropdownMenuCheckboxItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -562,6 +564,8 @@ export const DeviceList: React.FC<DeviceListProps> = ({
                       ['location', 'Location'],
                       ['installDate', 'Install Date'],
                       ['ip', 'IP'],
+                      ['createdAt', 'Created'],
+                      ['createdByName', 'Created By'],
                     ] as [keyof Device, string][]).filter(([key]) => isColVisible(String(key))).map(([key, label]) => (
                       <TableHead
                         key={key}
@@ -595,6 +599,12 @@ export const DeviceList: React.FC<DeviceListProps> = ({
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyIp(d.ip)} aria-label="Copy IP">
                           <Copy className="w-3.5 h-3.5" />
                         </Button>
+                      </TableCell>
+                      <TableCell style={{display: isColVisible('createdAt') ? undefined : 'none'}}>
+                        {d.createdAt ? new Date(d.createdAt).toLocaleString() : '—'}
+                      </TableCell>
+                      <TableCell style={{display: isColVisible('createdByName') ? undefined : 'none'}}>
+                        {d.createdByName || '—'}
                       </TableCell>
                       <TableCell style={{display: isColVisible('online') ? undefined : 'none'}}>
                         {onlineMap[d.id] === true ? (
