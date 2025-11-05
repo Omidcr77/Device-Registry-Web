@@ -25,6 +25,7 @@ export default function App() {
         }
       })
       .catch(() => {
+        try { localStorage.removeItem('token'); } catch {}
         setIsAuthenticated(false);
       })
       .finally(() => setAuthChecking(false));
