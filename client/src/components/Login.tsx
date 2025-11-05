@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Shield } from 'lucide-react';
+import { Eye, EyeOff, Shield, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -13,20 +13,32 @@ interface LoginProps {
 export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Call real API
-    if (!username || !password) return toast.error('Username and password required');
-    api.login(username, password)
+    if (submitting) return;
+    // Inline validation
+    let valid = true;
+    setApiError(null);
+    if (!username.trim()) { setUsernameError('Username is required'); valid = false; } else { setUsernameError(null); }
+    if (!password) { setPasswordError('Password is required'); valid = false; } else { setPasswordError(null); }
+    if (!valid) return;
+
+    setSubmitting(true);
+    api.login(username.trim(), password)
       .then(() => {
-        toast.success('Logged in');
         onLogin();
       })
       .catch((err) => {
-        toast.error(err?.message || 'Login failed');
-      });
+        const msg = err?.message || 'Login failed';
+        setApiError(msg);
+      })
+      .finally(() => setSubmitting(false));
   };
 
   return (
@@ -45,7 +57,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
         {/* Login Card */}
         <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-800/50 p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input
@@ -55,8 +67,13 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
+                aria-invalid={!!usernameError}
+                aria-describedby={usernameError ? 'username-error' : undefined}
                 className="h-12"
               />
+              {usernameError && (
+                <p id="username-error" className="text-xs text-red-600 mt-1">{usernameError}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -69,8 +86,13 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  aria-invalid={!!passwordError}
+                  aria-describedby={passwordError ? 'password-error' : undefined}
                   className="h-12 pr-12"
                 />
+                {passwordError && (
+                  <p id="password-error" className="text-xs text-red-600 mt-1">{passwordError}</p>
+                )}
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -85,11 +107,24 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
               </div>
             </div>
 
+            {/* API error live region */}
+            <div aria-live="polite" className="min-h-5 text-sm">
+              {apiError && (
+                <p className="text-red-600">{apiError}</p>
+              )}
+            </div>
+
             <Button
               type="submit"
-              className="w-full h-12 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/30 transition-all duration-200"
+              disabled={submitting}
+              className="w-full h-12 bg-gradient-to-r from-blue-500 to-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/30 transition-all duration-200"
             >
-              Login
+              {submitting ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Signing in…
+                </span>
+              ) : 'Login'}
             </Button>
           </form>
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, ArrowUpDown, Edit, Trash2, Filter, Download, Copy, Search, X, HelpCircle } from 'lucide-react';
+import { Plus, ArrowUpDown, Edit, Trash2, Filter, Download, Copy, Search, X, HelpCircle, MoreHorizontal } from 'lucide-react';
 import type { Device as MockDevice } from '../lib/mockData';
 import * as api from '../lib/api';
 import { toast } from 'sonner';
@@ -63,7 +63,6 @@ export const DeviceList: React.FC<DeviceListProps> = ({
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'online' | 'offline'>('all');
   const [showFilters, setShowFilters] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('deviceList.columns') || '[]'); } catch { return []; }
   });
@@ -509,11 +508,42 @@ export const DeviceList: React.FC<DeviceListProps> = ({
                 <Button variant="outline" size="sm" className="h-7 px-2" onClick={() => { setTypeFilter('all'); setStatusFilter('all'); onSearchChange?.(''); setCurrentPage(1); }}>Clear all</Button>
               )}
             </div>
-            {/* Advanced controls toggle on mobile */}
-            <div className="flex items-center gap-2 sm:hidden">
-              <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setShowAdvanced((v) => !v)}>
-                {showAdvanced ? 'Hide' : 'More'}
-              </Button>
+            {/* Right-side: counts + overflow */}
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-2 text-xs">
+                <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">Online {onlineCount}</span>
+                <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">Offline {offlineCount}</span>
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="More actions">
+                    <MoreHorizontal className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem asChild>
+                    <button className="w-full text-left" onClick={() => checkOnlineFor(paginatedDevices)}>Check Online (page)</button>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <button className="w-full text-left" onClick={exportDevices}><span className="inline-flex items-center gap-2"><Download className="w-3.5 h-3.5" /> Export</span></button>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Columns</DropdownMenuLabel>
+                  {['code','type','name','customer','location','installDate','ip','createdAt','createdByName','online'].map((k) => (
+                    <DropdownMenuCheckboxItem key={k}
+                      checked={isColVisible(k)}
+                      onCheckedChange={(checked: boolean) => {
+                        setVisibleColumns((prev) => {
+                          if (prev.length === 0 && checked) return prev;
+                          const set = new Set(prev);
+                          if (checked) set.add(k); else set.delete(k);
+                          return Array.from(set);
+                        });
+                      }}
+                    >{k === 'installDate' ? 'Install Date' : k === 'createdAt' ? 'Created' : k === 'createdByName' ? 'Created By' : k.charAt(0).toUpperCase() + k.slice(1)}</DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
@@ -551,42 +581,7 @@ export const DeviceList: React.FC<DeviceListProps> = ({
             </div>
           )}
 
-          {/* Advanced controls (always visible on sm+, collapsible on mobile) */}
-          <div className={`flex items-center gap-2 ${showAdvanced ? '' : 'hidden'} sm:flex`}>
-            <Button variant="outline" className="gap-2" onClick={() => checkOnlineFor(paginatedDevices)}>
-              Check Online (page)
-            </Button>
-            <Button variant="ghost" className="gap-2" onClick={exportDevices}>
-              <Download className="w-4 h-4" />
-              Export
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost">Columns</Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Visible Columns</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {['code','type','name','customer','location','installDate','ip','createdAt','createdByName','online'].map((k) => (
-                  <DropdownMenuCheckboxItem key={k}
-                    checked={isColVisible(k)}
-                    onCheckedChange={(checked: boolean) => {
-                      setVisibleColumns((prev) => {
-                        if (prev.length === 0 && checked) return prev;
-                        const set = new Set(prev);
-                        if (checked) set.add(k); else set.delete(k);
-                        return Array.from(set);
-                      });
-                    }}
-                  >{k === 'installDate' ? 'Install Date' : k === 'createdAt' ? 'Created' : k === 'createdByName' ? 'Created By' : k.charAt(0).toUpperCase() + k.slice(1)}</DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <div className="ml-2 hidden sm:flex items-center gap-2 text-xs">
-              <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">Online {onlineCount}</span>
-              <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">Offline {offlineCount}</span>
-            </div>
-          </div>
+          {/* Advanced controls moved into overflow menu above */}
         </div>
       </div>
 
