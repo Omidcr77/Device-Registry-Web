@@ -21,6 +21,9 @@ import reportRoutes from './routes/report.routes.js';
 app.use('/api/reports', reportRoutes);
 app.use('/api/health', healthRoutes);
 
+// Error handler should be last in the middleware chain (before starting server)
+app.use(errorHandler);
+
 const getLanIps = () => {
   const nets = os.networkInterfaces();
   const addrs: string[] = [];
@@ -91,8 +94,5 @@ const server = app.listen(ENV.PORT, '0.0.0.0', () => {
     console.log('ws not installed; live updates disabled');
   }
 })();
-
-// Error handler should be last in the middleware chain
-app.use(errorHandler);
 
 
